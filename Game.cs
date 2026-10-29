@@ -103,12 +103,44 @@ public class Game : GameWindow
         SceneObject sel = _scene[_selected];
 
         const float moveSpeed = 2.0f;   // unități de lume pe secundă
-        if (KeyboardState.IsKeyDown(Keys.Left))  sel.Transform.Position.X -= moveSpeed * dt;
+        /*if (KeyboardState.IsKeyDown(Keys.Left))  sel.Transform.Position.X -= moveSpeed * dt;
         if (KeyboardState.IsKeyDown(Keys.Right)) sel.Transform.Position.X += moveSpeed * dt;
         if (KeyboardState.IsKeyDown(Keys.Down))  sel.Transform.Position.Y -= moveSpeed * dt;
-        if (KeyboardState.IsKeyDown(Keys.Up))    sel.Transform.Position.Y += moveSpeed * dt;
+        if (KeyboardState.IsKeyDown(Keys.Up))    sel.Transform.Position.Y += moveSpeed * dt;*/
 
         // TODO (T2): Q / E rotesc obiectul, Z / X îl scalează
+
+        float speedMultiplier = KeyboardState.IsKeyDown(Keys.LeftShift) ? 3.0f : 1.0f;
+
+        // Deplasare cu săgețile.
+        if (KeyboardState.IsKeyDown(Keys.Left))
+            sel.Transform.Position.X -= moveSpeed * speedMultiplier * dt;
+        if (KeyboardState.IsKeyDown(Keys.Right))
+            sel.Transform.Position.X += moveSpeed * speedMultiplier * dt;
+        if (KeyboardState.IsKeyDown(Keys.Down))
+            sel.Transform.Position.Y -= moveSpeed * speedMultiplier * dt;
+        if (KeyboardState.IsKeyDown(Keys.Up))
+            sel.Transform.Position.Y += moveSpeed * speedMultiplier * dt;
+
+        // Q și E: rotație cu 90 de grade pe secundă.
+        if (KeyboardState.IsKeyDown(Keys.Q))
+            sel.Transform.Rotation += 90.0f * speedMultiplier * dt;
+        if (KeyboardState.IsKeyDown(Keys.E))
+            sel.Transform.Rotation -= 90.0f * speedMultiplier * dt;
+
+        // Z și X: micșorare și mărire uniformă.
+        float scaleFactor = MathF.Pow(1.5f, dt * speedMultiplier);
+        if (KeyboardState.IsKeyDown(Keys.Z))
+            sel.Transform.Scale /= scaleFactor;
+        if (KeyboardState.IsKeyDown(Keys.X))
+            sel.Transform.Scale *= scaleFactor;
+
+        // Limităm dimensiunea obiectului.
+        sel.Transform.Scale.X = Math.Clamp(sel.Transform.Scale.X, 0.1f, 10.0f);
+        sel.Transform.Scale.Y = Math.Clamp(sel.Transform.Scale.Y, 0.1f, 10.0f);
+
+        // Scalarea se face prin înmulțire deoarece modifică proporțional dimensiunea actuală a obiectului.
+        // Prin adunare, s-ar adăuga o valoare fixă, indiferent de dimensiunea obiectului.
 
         if (KeyboardState.IsKeyPressed(Keys.Tab)) _selected = (_selected + 1) % _scene.Count;
         if (KeyboardState.IsKeyPressed(Keys.O))   _camera.IsPerspective = !_camera.IsPerspective;
