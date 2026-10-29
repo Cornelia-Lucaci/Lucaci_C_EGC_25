@@ -25,6 +25,10 @@ public class Game : GameWindow
     private int _selected;            // indexul obiectului selectat în _scene (tasta Tab)
     private bool _wireframe;          // contur (true) sau plin (false)
 
+    // T4: Pivotul în jurul căruia se rotește obiectul.
+    private Vector2 _pivot;
+    private bool _hasPivot = false;
+
     // Contoare afișate în titlul ferestrei.
     private readonly string _baseTitle;
     private double _secondTimer;
@@ -167,6 +171,36 @@ public class Game : GameWindow
         }
 
         // TODO (T4, facultativ): clic dreapta = pivot; tasta P ținută = rotație în jurul pivotului
+
+        if (MouseState.IsButtonPressed(MouseButton.Right))
+        {
+            _pivot = ScreenToWorld(MouseState.Position);
+            _hasPivot = true;
+        }
+
+        if (KeyboardState.IsKeyDown(Keys.P) && _hasPivot)
+        {
+            SceneObject obj = _scene[_selected];
+
+            float angle = MathHelper.DegreesToRadians(90.0f * dt);
+
+            // Poziția obiectului relativă la pivot.
+            Vector2 offset = obj.Transform.Position - _pivot;
+
+            // Rotim poziția în jurul pivotului.
+            float cos = MathF.Cos(angle);
+            float sin = MathF.Sin(angle);
+
+            Vector2 rotatedOffset = new Vector2(
+                offset.X * cos - offset.Y * sin,
+                offset.X * sin + offset.Y * cos
+            );
+
+            obj.Transform.Position = _pivot + rotatedOffset;
+
+            // Rotim și obiectul propriu-zis cu același unghi.
+            obj.Transform.Rotation += 90.0f * dt;
+        }
 
         // --- Camera: tastatura și rotița (secțiunea 6.2) -----------------------------
 
