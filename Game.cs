@@ -29,6 +29,12 @@ public class Game : GameWindow
     private Vector2 _pivot;
     private bool _hasPivot = false;
 
+    //T5
+    private float _satelliteAngle = 0.0f;
+    private const float SatelliteDistance = 1.2f;
+    private const float SatelliteScale = 0.3f;
+    private Mesh _satelliteMesh = null!;
+
     // Contoare afișate în titlul ferestrei.
     private readonly string _baseTitle;
     private double _secondTimer;
@@ -62,6 +68,9 @@ public class Game : GameWindow
         _camera.Resize(ClientSize.X, ClientSize.Y);
 
         _shader = Shader.FromFiles("Shaders/shader.vert", "Shaders/shader.frag");
+
+        // T5: creăm triunghiul care va reprezenta satelitul.
+        _satelliteMesh = Shapes.Triangle();
 
         // Scena: aceleași forme din laboratorul 3, acum plasate în lume prin Transform2D.
         // Depth (z) contează doar în perspectivă (tasta O, secțiunea 7.2).
@@ -104,6 +113,12 @@ public class Game : GameWindow
         // --- Obiectul selectat: tastatura (secțiunea 8) ------------------------------
 
         float dt = (float)args.Time;
+
+        // T5: satelitul parcurge o orbită completă
+        _satelliteAngle += dt * MathF.PI / 2.0f;
+        if (_satelliteAngle >= MathF.Tau)
+            _satelliteAngle -= MathF.Tau;
+
         SceneObject sel = _scene[_selected];
 
         const float moveSpeed = 2.0f;   // unități de lume pe secundă
@@ -259,6 +274,26 @@ public class Game : GameWindow
         }
 
         // TODO (T5, facultativ): satelitul obiectului selectat
+
+        _satelliteAngle += (float)args.Time * MathF.PI / 2.0f;
+
+        if (_satelliteAngle >= MathF.Tau)
+            _satelliteAngle -= MathF.Tau;
+
+        Matrix4 satelliteModel =
+        Matrix4.CreateScale(SatelliteScale) *
+        Matrix4.CreateTranslation(SatelliteDistance, 0.0f, 0.0f) *
+        Matrix4.CreateRotationZ(_satelliteAngle) *
+        _scene[_selected].Transform.ModelMatrix;
+
+        // Când obiectul selectat este scalat, distanța efectivă a satelitului
+        // față de centrul obiectului se modifică. Acest lucru se întâmplă deoarece
+        // matricea model a obiectului selectat este înmulțită la final, astfel încât
+        // scalarea obiectului afectează și translația locală a satelitului.
+
+        _shader.SetMatrix4("uModel", satelliteModel);
+        _shader.SetColor("uTint", new Color4(1.0f, 0.8f, 0.2f, 1.0f));
+        _satelliteMesh.Draw();
 
         // 5. Afișăm cadrul terminat: back buffer <-> front buffer.
         SwapBuffers();
