@@ -74,23 +74,29 @@ public class FpsCamera : Camera
 
         // --- 3. Deplasarea: W A S D ---------------------------------------------------
 
-        float speed = MoveSpeed * dt;
-        if (keyboard.IsKeyDown(Keys.LeftShift))
-            speed *= SprintFactor;
-
         Vector3 forward = FreeFly
-            ? _front
-            : Vector3.Normalize(new Vector3(_front.X, 0f, _front.Z));
+              ? _front
+              : Vector3.Normalize(new Vector3(_front.X, 0f, _front.Z));
 
-        if (keyboard.IsKeyDown(Keys.W)) _position += forward * speed;
-        if (keyboard.IsKeyDown(Keys.S)) _position -= forward * speed;
-        if (keyboard.IsKeyDown(Keys.D)) _position += _right * speed;
-        if (keyboard.IsKeyDown(Keys.A)) _position -= _right * speed;
+        Vector3 moveDir = Vector3.Zero;
+        if (keyboard.IsKeyDown(Keys.W)) moveDir += forward;
+        if (keyboard.IsKeyDown(Keys.S)) moveDir -= forward;
+        if (keyboard.IsKeyDown(Keys.D)) moveDir += _right;
+        if (keyboard.IsKeyDown(Keys.A)) moveDir -= _right;
 
         if (FreeFly)
         {
-            if (keyboard.IsKeyDown(Keys.Space)) _position += WorldUp * speed;
-            if (keyboard.IsKeyDown(Keys.LeftControl)) _position -= WorldUp * speed;
+            if (keyboard.IsKeyDown(Keys.Space)) moveDir += WorldUp;
+            if (keyboard.IsKeyDown(Keys.LeftControl)) moveDir -= WorldUp;
+        }
+
+        if (moveDir.LengthSquared > 0f)
+        {
+            float speed = MoveSpeed * dt;
+            if (keyboard.IsKeyDown(Keys.LeftShift))
+                speed *= SprintFactor;
+
+            _position += Vector3.Normalize(moveDir) * speed;
         }
     }
 
