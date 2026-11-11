@@ -17,8 +17,7 @@ public class Game : GameWindow
 {
     // Camerele (nu depind de OpenGL, pot fi create imediat).
     private readonly FpsCamera _fps = new();
-    // TEMA: aici se adaugă camera orbită (private readonly OrbitCamera _orbit = new();)
-    private Camera _active;                        // camera folosită la desenare
+    private readonly OrbitCamera _orbit = new(); private Camera _active;                        // camera folosită la desenare
 
     // Obiectele care folosesc OpenGL se creează în OnLoad (abia atunci există contextul OpenGL).
     private Shader _shader = null!;
@@ -67,7 +66,7 @@ public class Game : GameWindow
 
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         _fps.Resize(ClientSize.X, ClientSize.Y);
-        // TEMA: și camera orbită trebuie să afle raportul de aspect
+        _orbit.Resize(ClientSize.X, ClientSize.Y);
 
         _shader = Shader.FromFiles("Shaders/shader.vert", "Shaders/shader.frag");
 
@@ -242,10 +241,26 @@ public class Game : GameWindow
             ConsolePanel.PrintMessage(CursorState == CursorState.Grabbed ? "cursor capturat" : "cursor eliberat");
         }
 
-        // TEMA: tasta V comută între camera FPS și camera orbită (vezi textul laboratorului).
         if (kb.IsKeyPressed(Keys.V))
         {
-            ConsolePanel.PrintMessage("camera orbită nu este încă implementată (tema)");
+            if (_active == _fps)
+            {
+                _orbit.SyncFromFps(_fps.Position, _fps.Front, distance: 5.0f);
+                _orbit.FieldOfView = _fps.FieldOfView;
+                _active = _orbit;
+                CursorState = CursorState.Normal;
+            }
+            else
+            {
+                _fps.SetPose(_orbit.Position, _orbit.Front);
+                _fps.FieldOfView = _orbit.FieldOfView;
+                _active = _fps;
+                CursorState = CursorState.Grabbed;
+            }
+
+            _ignoreMouseOnce = true;
+            _titleDirty = true;
+            ConsolePanel.PrintMessage($"cameră activă: {_active.Name}");
         }
     }
 

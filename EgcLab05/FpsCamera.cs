@@ -12,6 +12,23 @@ namespace Egc;
 /// </summary>
 public class FpsCamera : Camera
 {
+    /// <summary>
+    /// BONUS 1 (Orbită -> FPS): așază camera FPS într-o poziție dată, orientată pe direcția dată.
+    /// </summary>
+    public void SetPose(Vector3 position, Vector3 front)
+    {
+        _position = position;
+        Vector3 dir = Vector3.Normalize(front);
+
+        float pitchRad = MathF.Asin(Math.Clamp(dir.Y, -1.0f, 1.0f));
+        float yawRad = MathF.Atan2(dir.Z, dir.X);
+
+        Pitch = Math.Clamp(MathHelper.RadiansToDegrees(pitchRad), -MaxPitch, MaxPitch);
+        Yaw = MathHelper.RadiansToDegrees(yawRad);
+
+        UpdateVectors();
+    }
+
     // --- Starea camerei ---------------------------------------------------------
 
     private Vector3 _position;
