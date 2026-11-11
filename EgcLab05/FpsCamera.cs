@@ -1,5 +1,6 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.Diagnostics;
 
 namespace Egc;
 
@@ -60,28 +61,37 @@ public class FpsCamera : Camera
     {
         // --- 1. Orientarea: mouse-ul modifică yaw și pitch -------------------------
 
-        // TODO 5.5 (a): deplasarea pe orizontală modifică yaw, cea pe verticală modifică pitch.
-        //               Atenție: pe ecran Y crește în jos, iar pitch pozitiv înseamnă privire în sus.
-        //               Apoi limitați pitch-ul la intervalul [-MaxPitch, MaxPitch].
-
+        Yaw += mouseDelta.X * MouseSensitivity;
+        Pitch -= mouseDelta.Y * MouseSensitivity;
+        Pitch = Math.Clamp(Pitch, -MaxPitch, MaxPitch);
 
         UpdateVectors();
 
         // --- 2. FOV: rotița mouse-ului --------------------------------------------
 
         if (mouse.ScrollDelta.Y != 0f)
-            ChangeFov(-mouse.ScrollDelta.Y * 2f);
+            ChangeFov(-mouse.ScrollDelta.Y * FovStep);
 
         // --- 3. Deplasarea: W A S D ---------------------------------------------------
 
-        // TODO 5.6: direcția "înainte" (în modul mers: proiecția lui Front pe planul orizontal),
-        //           apoi deplasarea cu viteză constantă, independentă de numărul de cadre pe secundă.
-        //           Pași: (1) forward; (2) vectorul "move" = suma direcțiilor tastelor apăsate
-        //           (W +forward, S -forward, D +_right, A -_right); (3) normalizați "move";
-        //           (4) _position += move * viteză * dt (viteza crește de SprintFactor ori cu Shift stânga).
+        float speed = MoveSpeed * dt;
+        if (keyboard.IsKeyDown(Keys.LeftShift))
+            speed *= SprintFactor;
 
-        // TODO 5.7 (facultativ): în zbor liber (FreeFly), "forward" este chiar _front,
-        //           iar Space urcă și Ctrl stânga coboară (pe axa Y a lumii, WorldUp).
+        Vector3 forward = FreeFly
+            ? _front
+            : Vector3.Normalize(new Vector3(_front.X, 0f, _front.Z));
+
+        if (keyboard.IsKeyDown(Keys.W)) _position += forward * speed;
+        if (keyboard.IsKeyDown(Keys.S)) _position -= forward * speed;
+        if (keyboard.IsKeyDown(Keys.D)) _position += _right * speed;
+        if (keyboard.IsKeyDown(Keys.A)) _position -= _right * speed;
+
+        if (FreeFly)
+        {
+            if (keyboard.IsKeyDown(Keys.Space)) _position += WorldUp * speed;
+            if (keyboard.IsKeyDown(Keys.LeftControl)) _position -= WorldUp * speed;
+        }
     }
 
     /// <summary>
@@ -89,12 +99,17 @@ public class FpsCamera : Camera
     /// </summary>
     private void UpdateVectors()
     {
-        // TODO 5.5 (b): Front din yaw și pitch (formula din secțiunea 5.2), apoi Right și Up
-        //               prin produse vectoriale; toți trei normalizați.
-        //               Până atunci camera privește mereu spre -Z.
-        _front = -Vector3.UnitZ;
-        _right = Vector3.UnitX;
-        _up = Vector3.UnitY;
+        float yawRad = MathHelper.DegreesToRadians(Yaw);
+        float pitchRad = MathHelper.DegreesToRadians(Pitch);
+
+        Vector3 front;
+        front.X = MathF.Cos(pitchRad) * MathF.Cos(yawRad);
+        front.Y = MathF.Sin(pitchRad);
+        front.Z = MathF.Cos(pitchRad) * MathF.Sin(yawRad);
+
+        _front = Vector3.Normalize(front);
+        _right = Vector3.Normalize(Vector3.Cross(_front, Vector3.UnitY));
+        _up = Vector3.Normalize(Vector3.Cross(_right, _front));
     }
 
     public override void Reset()
