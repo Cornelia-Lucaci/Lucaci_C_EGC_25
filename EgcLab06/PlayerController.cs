@@ -62,12 +62,23 @@ public sealed class PlayerController
 
         // 2. Saltul încărcat: apăsare -> ținere -> eliberare.
         // TODO 6.5:
-        //   (a) pe sol, la APĂSAREA acțiunii Jump: _charging = true și _charge = 0;
-        //   (b) cât timp _charging și acțiunea este ȚINUTĂ: _charge crește cu dt / ChargeTime, cel mult 1;
-        //   (c) la ELIBERARE (dacă _charging): _verticalSpeed = Lerp(MinJumpSpeed, MaxJumpSpeed, _charge),
-        //       apoi _charging = false și _charge = 0.
+        if (OnGround && input.WasPressed(Actions.Jump))
+        {
+            _charging = true;
+            _charge = 0.0f;
+        }
 
+        if (_charging && input.IsDown(Actions.Jump))
+        {
+            _charge = MathF.Min(_charge + dt / ChargeTime, 1.0f);
+        }
 
+        if (_charging && input.WasReleased(Actions.Jump))
+        {
+            _verticalSpeed = Easing.Lerp(MinJumpSpeed, MaxJumpSpeed, _charge);
+            _charging = false;
+            _charge = 0.0f;
+        }
 
         // 3. Gravitația (metoda Euler semi-implicită): întâi viteza, apoi poziția.
         if (!OnGround || _verticalSpeed > 0.0f)
