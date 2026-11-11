@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Egc.Teme;
 
 namespace Egc;
 
@@ -66,6 +67,7 @@ public class Game : GameWindow
 
         _scenes.Add(new LabScene());
         // TEMA: adăugați aici scena (sau scenele) temei; Tab trece de la o scenă la alta.
+        _scenes.Add(new DodgeObstaclesScene());
 
         foreach (Scene scene in _scenes)
         {
