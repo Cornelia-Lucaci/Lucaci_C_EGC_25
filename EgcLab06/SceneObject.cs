@@ -38,6 +38,7 @@ public sealed class SceneObject
         {
             // TODO 6.6* (facultativ): ModelMatrix * Parent.WorldMatrix, dacă există părinte.
             // (În OpenTK matricele se înmulțesc în ordinea aplicării, de la stânga la dreapta.)
+            //return Transform.ModelMatrix;   // provizoriu: părintele este ignorat
             return Parent != null ? Transform.ModelMatrix * Parent.WorldMatrix : Transform.ModelMatrix;
         }
     }
