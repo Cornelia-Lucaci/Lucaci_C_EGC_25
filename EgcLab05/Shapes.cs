@@ -213,8 +213,94 @@ public static class Shapes
     /// </summary>
     public static Mesh Cylinder(float radius, float height, int segments)
     {
-        // TODO 5.8 (facultativ): vârfurile și indicii cilindrului; până atunci, o formă goală.
-        return new Mesh(Array.Empty<float>(), Array.Empty<uint>());
+        float halfH = height * 0.5f;
+        int columns = segments + 1;
+
+        // Vârfuri:
+        // - suprafața laterală: 2 rânduri × (segments + 1)
+        // - capac sus: 1 centru + (segments + 1) pe cerc
+        // - capac jos: 1 centru + (segments + 1) pe cerc
+        int totalVerts = 2 * columns + 2 * (1 + columns);
+        int totalIndices = segments * 6 + segments * 3 + segments * 3;
+
+        var vertices = new float[totalVerts * Mesh.FloatsPerVertex];
+        var indices = new uint[totalIndices];
+
+        int vIdx = 0;
+        int iIdx = 0;
+
+        // 1. Suprafața laterală (grilă cu 2 rânduri: 0 = jos, 1 = sus)
+        for (int row = 0; row < 2; row++)
+        {
+            float y = (row == 0) ? -halfH : halfH;
+            float v = (float)row;
+
+            for (int j = 0; j < columns; j++)
+            {
+                float u = (float)j / segments;
+                float angle = u * 2.0f * MathF.PI;
+                float x = radius * MathF.Sin(angle);
+                float z = radius * MathF.Cos(angle);
+
+                SetVertex(vertices, vIdx++, x, y, z, u, v, 0.45f);
+            }
+        }
+
+        for (int j = 0; j < segments; j++)
+        {
+            uint bottomLeft = (uint)j;
+            uint bottomRight = (uint)(j + 1);
+            uint topLeft = (uint)(columns + j);
+            uint topRight = (uint)(columns + j + 1);
+
+            indices[iIdx++] = bottomLeft;
+            indices[iIdx++] = bottomRight;
+            indices[iIdx++] = topRight;
+
+            indices[iIdx++] = topRight;
+            indices[iIdx++] = topLeft;
+            indices[iIdx++] = bottomLeft;
+        }
+
+        // 2. Capacul de sus (+Y) — evantai de triunghiuri
+        int topCenter = vIdx;
+        Color4 topColor = new(0.2f, 0.85f, 0.4f, 1.0f);
+        SetVertex(vertices, vIdx++, 0f, halfH, 0f, topColor);
+        int topRingStart = vIdx;
+
+        for (int j = 0; j < columns; j++)
+        {
+            float angle = ((float)j / segments) * 2.0f * MathF.PI;
+            SetVertex(vertices, vIdx++, radius * MathF.Sin(angle), halfH, radius * MathF.Cos(angle), topColor);
+        }
+
+        for (int j = 0; j < segments; j++)
+        {
+            indices[iIdx++] = (uint)topCenter;
+            indices[iIdx++] = (uint)(topRingStart + j);
+            indices[iIdx++] = (uint)(topRingStart + j + 1);
+        }
+
+        // 3. Capacul de jos (-Y) — evantai de triunghiuri
+        int bottomCenter = vIdx;
+        Color4 bottomColor = new(0.85f, 0.3f, 0.7f, 1.0f);
+        SetVertex(vertices, vIdx++, 0f, -halfH, 0f, bottomColor);
+        int bottomRingStart = vIdx;
+
+        for (int j = 0; j < columns; j++)
+        {
+            float angle = ((float)j / segments) * 2.0f * MathF.PI;
+            SetVertex(vertices, vIdx++, radius * MathF.Sin(angle), -halfH, radius * MathF.Cos(angle), bottomColor);
+        }
+
+        for (int j = 0; j < segments; j++)
+        {
+            indices[iIdx++] = (uint)bottomCenter;
+            indices[iIdx++] = (uint)(bottomRingStart + j + 1);
+            indices[iIdx++] = (uint)(bottomRingStart + j);
+        }
+
+        return new Mesh(vertices, indices);
     }
 
     // =====================================================================================
@@ -226,6 +312,63 @@ public static class Shapes
     /// 4·face .. 4·face + 3 și indicii 6·face .. 6·face + 5 (triunghiurile a-b-c și c-d-a).
     /// Colțurile a, b, c, d trebuie date în sens trigonometric, privind fața din afară.
     /// </summary>
+    public static Mesh Torus(float majorRadius, float minorRadius, int majorSegments, int minorSegments)
+    {
+        int columns = majorSegments + 1;
+        int rows = minorSegments + 1;
+
+        var vertices = new float[rows * columns * Mesh.FloatsPerVertex];
+        var indices = new uint[minorSegments * majorSegments * 6];
+
+        // 1. Vârfurile:
+        //    u (0..1) = unghiul theta în jurul axei Y (cercul mare)
+        //    v (0..1) = unghiul phi în jurul secțiunii tubului (cercul mic)
+        for (int i = 0; i < rows; i++)
+        {
+            float v = (float)i / minorSegments;
+            float phi = v * 2.0f * MathF.PI;
+            float cosPhi = MathF.Cos(phi);
+            float sinPhi = MathF.Sin(phi);
+
+            float ringRadius = majorRadius + minorRadius * cosPhi;
+            float y = minorRadius * sinPhi;
+
+            for (int j = 0; j < columns; j++)
+            {
+                float u = (float)j / majorSegments;
+                float theta = u * 2.0f * MathF.PI;
+
+                float x = ringRadius * MathF.Sin(theta);
+                float z = ringRadius * MathF.Cos(theta);
+
+                SetVertex(vertices, i * columns + j, x, y, z, u, v, 0.55f);
+            }
+        }
+
+        // 2. Indicii: fiecare celulă a grilei = 2 triunghiuri în sens trigonometric (CCW) privite din exterior
+        int k = 0;
+        for (int i = 0; i < minorSegments; i++)
+        {
+            for (int j = 0; j < majorSegments; j++)
+            {
+                uint bottomLeft = (uint)(i * columns + j);
+                uint bottomRight = bottomLeft + 1;
+                uint topLeft = bottomLeft + (uint)columns;
+                uint topRight = topLeft + 1;
+
+                indices[k++] = bottomLeft;
+                indices[k++] = bottomRight;
+                indices[k++] = topRight;
+
+                indices[k++] = topRight;
+                indices[k++] = topLeft;
+                indices[k++] = bottomLeft;
+            }
+        }
+
+        return new Mesh(vertices, indices);
+    }
+
     private static void AddFace(float[] vertices, uint[] indices, int face,
                                 Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color4 color)
     {
