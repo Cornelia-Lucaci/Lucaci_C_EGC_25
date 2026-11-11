@@ -1,3 +1,5 @@
+// cornelia.lucaci@student.usv.ro
+
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
