@@ -61,6 +61,9 @@ public class Game : GameWindow
         _camera.Resize(ClientSize.X, ClientSize.Y);
         GL.Enable(EnableCap.DepthTest);
 
+        //tema scena masina 
+        _scenes.Add(new LabScene());
+        _scenes.Add(new MasinaSferaScene());
         _shader = Shader.FromFiles("Shaders/shader.vert", "Shaders/shader.frag");
 
         BindCommonActions();
