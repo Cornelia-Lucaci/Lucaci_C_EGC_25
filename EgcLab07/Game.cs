@@ -29,6 +29,7 @@ public class Game : GameWindow
     // Fundalul: un dreptunghi care acoperă tot ecranul, desenat cu background.frag.
     private Mesh _screenQuad = null!;
     private Shader _background = null!;
+    private Shader _spaceBackground = null!;
 
     private bool _wireframe;
     private bool _showUV;
@@ -66,12 +67,21 @@ public class Game : GameWindow
         GL.Enable(EnableCap.DepthTest);
 
         _screenQuad = Shapes.Quad(2.0f, 2.0f);
-        _background = _shaders.Get("background.vert", "background.frag");
+        _background = _shaders.Get(
+      "background.vert",
+      "background.frag"
+  );
+
+        _spaceBackground = _shaders.Get(
+            "background.vert",
+            "space_background.frag"
+        );
 
         BindCommonActions();
 
         _scenes.Add(new LabScene());
         // TEMA: adăugați aici scena (sau scenele) temei; Tab trece de la o scenă la alta.
+        _scenes.Add(new PlanetScene());
 
         foreach (Scene scene in _scenes)
         {
@@ -199,12 +209,19 @@ public class Game : GameWindow
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        // 1. Fundalul: tot ecranul, fără test de adâncime (orice obiect se va desena peste el).
+        // 1. Fundalul: alegem shaderul in functie de scena activa
         GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
         GL.Disable(EnableCap.DepthTest);
-        _background.Use();
-        _frame.Apply(_background);
+
+        // Prima scena foloseste fundalul original.
+        // Scena Planeta foloseste fundalul cu stele.
+        Shader activeBackground =
+            ActiveScene is PlanetScene ? _spaceBackground : _background;
+
+        activeBackground.Use();
+        _frame.Apply(activeBackground);
         _screenQuad.Draw();
+
         GL.Enable(EnableCap.DepthTest);
 
         // 2. Scena.
