@@ -68,17 +68,30 @@ public sealed class Shader : IDisposable
     /// dacă fișierele au erori, mesajul apare în consolă și programul vechi rămâne activ.
     /// Întoarce true dacă programul a fost înlocuit.
     /// </summary>
-    public bool Reload()
+
+public bool Reload()
     {
-        // TODO 7.1: reîncărcarea programului (secțiunea 2.3)
-        //   1. construiți un program NOU din fișiere: if (!TryBuild(out int newHandle)) return false;
-        //      (la eroare, TryBuild a afișat deja mesajul, iar programul vechi rămâne activ);
-        //   2. ștergeți programul vechi (GL.DeleteProgram(Handle)), apoi Handle = newHandle; IsFallback = false;
-        //   3. locațiile uniformelor aparțin programului vechi: goliți _uniformLocations, _missing și _reported;
-        //   4. return true.
-        ConsolePanel.PrintMessage($"{Name}: reîncărcarea nu este scrisă încă (TODO 7.1).");
-        return false;
-    }
+        // 1. Construim un program shader nou.
+        // Dacă apare o eroare, păstrăm programul vechi.
+        if (!TryBuild(out int newHandle))
+            return false;
+
+        // 2. Ștergem programul vechi și îl înlocuim cu cel nou.
+        GL.DeleteProgram(Handle);
+        Handle = newHandle;
+        IsFallback = false;
+
+        // 3. Golim informațiile despre uniformele programului vechi.
+        _uniformLocations.Clear();
+        _missing.Clear();
+        _reported.Clear();
+
+        // 4. Reîncărcarea a reușit.
+        ConsolePanel.PrintMessage($"{Name}: shader reîncărcat cu succes.");
+        return true;
+ }
+
+    
 
     /// <summary>Adevărat dacă unul dintre fișiere a fost salvat după ultima compilare (pentru reîncărcarea automată).</summary>
     public bool FilesChanged()
