@@ -37,29 +37,46 @@ public sealed class UniformSet
     {
         foreach ((string name, object value) in _values)
         {
+
             switch (value)
             {
                 case float f:
                     shader.SetFloat(name, f);
                     break;
+
                 case int i:
                     shader.SetInt(name, i);
                     break;
+
+                case bool b:
+                    shader.SetInt(name, b ? 1 : 0);
+                    break;
+
+                case Vector2 v2:
+                    shader.SetVector2(name, v2);
+                    break;
+
+                case Vector3 v3:
+                    shader.SetVector3(name, v3);
+                    break;
+
                 case Color4 c:
                     shader.SetColor(name, c);
                     break;
+
                 case Matrix4 m:
                     shader.SetMatrix4(name, m);
                     break;
-                // TODO 7.2: tratați și tipurile Vector2 (SetVector2), Vector3 (SetVector3)
-                //           și bool (SetInt, cu 1 pentru true și 0 pentru false), după modelul de mai sus.
+
                 default:
                     if (Unsupported.Add(value.GetType()))
                     {
-                        ConsolePanel.PrintMessage($"UniformSet.Apply: tipul {value.GetType().Name} nu este tratat ({name}) – TODO 7.2");
+                        ConsolePanel.PrintMessage(
+                            $"UniformSet.Apply: tipul {value.GetType().Name} nu este tratat ({name}) – TODO 7.2");
                     }
                     break;
             }
+
         }
     }
 
